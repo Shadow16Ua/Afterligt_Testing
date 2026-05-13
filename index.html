@@ -3,197 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Server Checklist · Pre-Season Test</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>MC Server Checklist</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase compat SDK (без ES modules — працює скрізь) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
-  :root {
-    --bg: #0f1117;
-    --bg2: #161a24;
-    --bg3: #1e2333;
-    --border: #2a2f42;
-    --border2: #363c52;
-    --text: #e8eaf2;
-    --text2: #8b90a8;
-    --text3: #555c78;
-    --accent: #5865f2;
-    --accent2: #7289da;
-    --green: #3ba55c;
-    --green-bg: #1a2e23;
-    --green-border: #2d5a3d;
-    --red: #ed4245;
-    --red-bg: #2e1a1a;
-    --red-border: #5a2d2d;
-    --yellow: #faa61a;
-    --yellow-bg: #2e2310;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Inter', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
-  body { min-height: 100vh; }
+:root {
+  --bg: #0f1117;
+  --bg2: #161a24;
+  --bg3: #1e2333;
+  --border: #2a2f42;
+  --border2: #363c52;
+  --text: #e8eaf2;
+  --text2: #8b90a8;
+  --text3: #555c78;
+  --accent: #5865f2;
+  --accent2: #7289da;
+  --green: #3ba55c;
+  --green-bg: #1a2e23;
+  --green-border: #2d5a3d;
+  --red: #ed4245;
+  --red-bg: #2e1a1a;
+  --red-border: #5a2d2d;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+body { min-height: 100vh; }
+.shell { display: flex; min-height: 100vh; }
 
-  /* LAYOUT */
-  .shell { display: flex; min-height: 100vh; }
-  .sidebar { width: 240px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-  .main { flex: 1; padding: 32px 40px; max-width: 860px; }
+/* SIDEBAR */
+.sidebar { width: 240px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sb-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border); }
+.sb-title { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: .04em; }
+.sb-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.sb-stats { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+.sb-stat { display: flex; justify-content: space-between; align-items: center; }
+.sb-stat-label { font-size: 11px; color: var(--text2); }
+.sb-stat-val { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+.progress-wrap { padding: 8px 16px 12px; border-bottom: 1px solid var(--border); }
+.progress-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+.progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s; }
+.sb-sections { padding: 10px 0; flex: 1; }
+.sb-sec-item { padding: 7px 16px; font-size: 12px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background .15s, color .15s; user-select: none; }
+.sb-sec-item:hover, .sb-sec-item.active { background: var(--bg3); color: var(--text); }
+.sb-sec-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.sb-sec-dot.has-bug { background: var(--red); }
+.sb-sec-dot.all-ok { background: var(--green); }
+.sb-bottom { padding: 12px 16px; border-top: 1px solid var(--border); }
+.sb-sync { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.sync-dot.live { background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.export-btn { font-family: var(--sans); font-size: 11px; padding: 6px 10px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 6px; width: 100%; text-align: left; }
+.export-btn:hover { border-color: var(--border2); color: var(--text); }
 
-  /* SIDEBAR */
-  .sb-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border); }
-  .sb-title { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: .04em; }
-  .sb-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-  .sb-stats { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
-  .sb-stat { display: flex; justify-content: space-between; align-items: center; }
-  .sb-stat-label { font-size: 11px; color: var(--text2); }
-  .sb-stat-val { font-family: var(--mono); font-size: 13px; font-weight: 700; }
-  .progress-wrap { padding: 0 16px 12px; border-bottom: 1px solid var(--border); }
-  .progress-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
-  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .5s; }
-  .sb-sections { padding: 10px 0; flex: 1; }
-  .sb-sec-item { padding: 7px 16px; font-size: 12px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background .15s, color .15s; }
-  .sb-sec-item:hover, .sb-sec-item.active { background: var(--bg3); color: var(--text); }
-  .sb-sec-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
-  .sb-sec-dot.has-bug { background: var(--red); }
-  .sb-sec-dot.all-ok { background: var(--green); }
-  .sb-bottom { padding: 12px 16px; border-top: 1px solid var(--border); }
-  .sb-sync { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
-  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
-  .sync-dot.live { background: var(--green); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* MAIN */
+.main { flex: 1; padding: 32px 40px; }
+.page-header { margin-bottom: 28px; }
+.page-title { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.page-title span { color: var(--accent2); }
+.page-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.6; }
+.page-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.meta-tag { font-family: var(--mono); font-size: 11px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; }
 
-  /* HEADER */
-  .page-header { margin-bottom: 32px; }
-  .page-title { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
-  .page-title span { color: var(--accent2); }
-  .page-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.5; }
-  .page-meta { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
-  .meta-tag { font-family: var(--mono); font-size: 11px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; }
+/* NICK BANNER */
+.nick-banner { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nick-banner-label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.nick-banner input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; font-size: 13px; font-family: var(--mono); width: 160px; font-weight: 500; }
+.nick-banner input:focus { outline: none; border-color: var(--accent); }
+.nick-banner-hint { font-size: 11px; color: var(--text3); }
 
-  /* FILTER BAR */
-  .filter-bar { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
-  .filter-btn { font-family: var(--sans); font-size: 12px; padding: 5px 12px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 6px; transition: all .15s; }
-  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
-  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .filter-sep { flex: 1; }
-  .add-task-btn { font-family: var(--sans); font-size: 12px; padding: 5px 12px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; border-radius: 6px; transition: opacity .15s; font-weight: 500; }
-  .add-task-btn:hover { opacity: .85; }
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.filter-btn { font-family: var(--sans); font-size: 12px; padding: 5px 12px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 6px; transition: all .15s; }
+.filter-btn:hover { border-color: var(--border2); color: var(--text); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filter-gap { flex: 1; }
+.add-btn { font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 5px 14px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; border-radius: 6px; transition: opacity .15s; }
+.add-btn:hover { opacity: .85; }
 
-  /* ADD TASK FORM */
-  .add-form { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 24px; display: none; }
-  .add-form.open { display: block; }
-  .add-form h3 { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .form-field { display: flex; flex-direction: column; gap: 4px; }
-  .form-field label { font-size: 11px; color: var(--text3); }
-  .form-field input, .form-field select, .form-field textarea {
-    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
-    padding: 7px 10px; border-radius: 6px; font-family: var(--sans); font-size: 13px;
-    transition: border-color .15s;
-  }
-  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--accent); }
-  .form-field select option { background: var(--bg2); }
-  .form-field.full { grid-column: 1 / -1; }
-  .form-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
-  .btn-cancel { font-family: var(--sans); font-size: 13px; padding: 6px 14px; background: transparent; border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 6px; }
-  .btn-submit { font-family: var(--sans); font-size: 13px; padding: 6px 14px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; border-radius: 6px; font-weight: 500; }
+/* ADD FORM */
+.add-form { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 24px; display: none; }
+.add-form.open { display: block; }
+.add-form-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-col-full { grid-column: 1 / -1; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: 11px; color: var(--text3); }
+.form-field input, .form-field select { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-family: var(--sans); font-size: 13px; }
+.form-field input:focus, .form-field select:focus { outline: none; border-color: var(--accent); }
+.form-field select option { background: var(--bg2); }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.btn-cancel { font-family: var(--sans); font-size: 13px; padding: 6px 14px; background: transparent; border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 6px; }
+.btn-submit { font-family: var(--sans); font-size: 13px; font-weight: 500; padding: 6px 14px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; border-radius: 6px; }
 
-  /* SECTION */
-  .section-block { margin-bottom: 28px; }
-  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .section-name { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text2); }
-  .sec-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
-  .sec-badge.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  .sec-badge.bug { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-  .sec-progress { font-size: 11px; color: var(--text3); margin-left: auto; font-family: var(--mono); }
+/* SECTION */
+.section-block { margin-bottom: 28px; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.section-name { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text2); }
+.sec-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+.sec-badge.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.sec-badge.bug { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.sec-progress { font-size: 11px; color: var(--text3); margin-left: auto; font-family: var(--mono); }
 
-  /* TASK CARD */
-  .task-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 6px; display: flex; gap: 12px; align-items: flex-start; transition: border-color .2s; }
-  .task-card:hover { border-color: var(--border2); }
-  .task-card.status-ok { border-left: 3px solid var(--green); background: linear-gradient(90deg, rgba(59,165,92,.06) 0%, var(--bg2) 60%); }
-  .task-card.status-bug { border-left: 3px solid var(--red); background: linear-gradient(90deg, rgba(237,66,69,.06) 0%, var(--bg2) 60%); }
-  .task-body { flex: 1; min-width: 0; }
-  .task-name { font-size: 13px; color: var(--text); line-height: 1.5; font-weight: 500; }
-  .task-note { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: var(--mono); line-height: 1.4; }
-  .task-who { font-size: 11px; color: var(--text3); margin-top: 5px; }
-  .task-who span { color: var(--accent2); font-weight: 500; }
-  .bug-report { margin-top: 8px; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #f5a0a0; font-family: var(--mono); white-space: pre-wrap; }
-  .bug-input-wrap { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
-  .bug-textarea { background: var(--red-bg); border: 1px solid var(--red-border); color: #f5a0a0; padding: 7px 10px; border-radius: 6px; font-family: var(--mono); font-size: 12px; resize: vertical; min-height: 60px; width: 100%; }
-  .bug-textarea:focus { outline: none; border-color: var(--red); }
-  .bug-save-btn { align-self: flex-end; font-family: var(--sans); font-size: 11px; padding: 4px 10px; background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red); cursor: pointer; border-radius: 5px; font-weight: 500; }
-  .bug-save-btn:hover { background: var(--red); color: #fff; }
-  .nick-wrap { margin-top: 6px; }
-  .nick-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 5px; font-size: 11px; font-family: var(--mono); width: 120px; }
-  .nick-input:focus { outline: none; border-color: var(--accent); }
-  .task-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; flex-direction: column; }
-  .btn-ok, .btn-bug { font-family: var(--sans); font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; border: 1px solid; transition: all .15s; min-width: 52px; text-align: center; }
-  .btn-ok { background: transparent; border-color: var(--border2); color: var(--text2); }
-  .btn-ok:hover, .btn-ok.active { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-  .btn-bug { background: transparent; border-color: var(--border2); color: var(--text2); }
-  .btn-bug:hover, .btn-bug.active { background: var(--red-bg); border-color: var(--red); color: var(--red); }
-  .btn-reset { background: transparent; border: 1px solid var(--border); color: var(--text3); cursor: pointer; border-radius: 5px; font-size: 13px; padding: 4px 7px; line-height: 1; }
-  .btn-reset:hover { border-color: var(--border2); color: var(--text2); }
-  .btn-del { background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 2px 5px; border-radius: 4px; }
-  .btn-del:hover { color: var(--red); background: var(--red-bg); }
+/* TASK CARD */
+.task-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 6px; display: flex; gap: 12px; align-items: flex-start; transition: border-color .15s; }
+.task-card:hover { border-color: var(--border2); }
+.task-card.status-ok { border-left: 3px solid var(--green); background: linear-gradient(90deg, rgba(59,165,92,.07) 0%, var(--bg2) 50%); }
+.task-card.status-bug { border-left: 3px solid var(--red); background: linear-gradient(90deg, rgba(237,66,69,.07) 0%, var(--bg2) 50%); }
+.task-body { flex: 1; min-width: 0; }
+.task-name { font-size: 13px; color: var(--text); line-height: 1.5; font-weight: 500; }
+.task-note { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: var(--mono); line-height: 1.4; }
+.task-who { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.task-who b { color: var(--accent2); font-weight: 500; }
+.bug-wrap { margin-top: 8px; }
+.bug-textarea { width: 100%; background: var(--red-bg); border: 1px solid var(--red-border); color: #f5a0a0; padding: 7px 10px; border-radius: 6px; font-family: var(--mono); font-size: 12px; resize: vertical; min-height: 58px; }
+.bug-textarea:focus { outline: none; border-color: var(--red); }
+.bug-save-btn { font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 4px 10px; margin-top: 5px; background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red); cursor: pointer; border-radius: 5px; }
+.bug-save-btn:hover { background: var(--red); color: #fff; }
+.task-actions { display: flex; flex-direction: column; gap: 5px; align-items: center; flex-shrink: 0; }
+.btn-ok, .btn-bug { font-family: var(--sans); font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; border: 1px solid; min-width: 54px; text-align: center; transition: all .15s; background: transparent; border-color: var(--border2); color: var(--text2); }
+.btn-ok:hover  { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.btn-bug:hover { background: var(--red-bg);   border-color: var(--red);   color: var(--red); }
+.btn-ok.active  { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.btn-bug.active { background: var(--red-bg);   border-color: var(--red);   color: var(--red); }
+.btn-icon { background: transparent; border: 1px solid var(--border); color: var(--text3); cursor: pointer; border-radius: 5px; font-size: 13px; padding: 4px 7px; line-height: 1; }
+.btn-icon:hover { border-color: var(--border2); color: var(--text2); }
+.btn-del { background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 3px 6px; border-radius: 4px; }
+.btn-del:hover { color: var(--red); background: var(--red-bg); }
 
-  /* EMPTY */
-  .empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
-  .empty-icon { font-size: 32px; margin-bottom: 12px; }
+.loading { text-align: center; padding: 60px; color: var(--text3); font-family: var(--mono); font-size: 13px; }
+.empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
+.empty-icon { font-size: 32px; margin-bottom: 12px; }
 
-  /* LOADING */
-  .loading { text-align: center; padding: 60px; color: var(--text3); font-family: var(--mono); font-size: 13px; }
-
-  /* NICK BANNER */
-  .nick-banner { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
-  .nick-banner-label { font-size: 12px; color: var(--text2); }
-  .nick-banner input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; font-size: 13px; font-family: var(--mono); width: 160px; font-weight: 500; }
-  .nick-banner input:focus { outline: none; border-color: var(--accent); }
-  .nick-banner-hint { font-size: 11px; color: var(--text3); margin-left: auto; }
-
-  /* EXPORT */
-  .export-btn { font-family: var(--sans); font-size: 11px; padding: 4px 10px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 5px; margin-top: 8px; }
-  .export-btn:hover { border-color: var(--border2); color: var(--text); }
-
-  /* RESPONSIVE */
-  @media (max-width: 700px) {
-    .sidebar { display: none; }
-    .main { padding: 20px 16px; }
-    .form-grid { grid-template-columns: 1fr; }
-  }
+@media (max-width: 680px) {
+  .sidebar { display: none; }
+  .main { padding: 20px 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
-
 <div class="shell">
-  <!-- SIDEBAR -->
-  <nav class="sidebar" id="sidebar">
+
+  <nav class="sidebar">
     <div class="sb-header">
       <div class="sb-title">// MC SERVER</div>
       <div class="sb-sub">Pre-Season Checklist</div>
     </div>
-    <div class="sb-stats" id="sbStats">
+    <div class="sb-stats">
       <div class="sb-stat"><span class="sb-stat-label">Всього задач</span><span class="sb-stat-val" id="statTotal">—</span></div>
       <div class="sb-stat"><span class="sb-stat-label">OK</span><span class="sb-stat-val" style="color:var(--green)" id="statOk">—</span></div>
       <div class="sb-stat"><span class="sb-stat-label">Баги</span><span class="sb-stat-val" style="color:var(--red)" id="statBug">—</span></div>
       <div class="sb-stat"><span class="sb-stat-label">Не перевірено</span><span class="sb-stat-val" style="color:var(--text2)" id="statPend">—</span></div>
     </div>
     <div class="progress-wrap">
-      <div class="progress-label">Прогрес</div>
+      <div class="progress-label">Прогрес тестування</div>
       <div class="progress-bar"><div class="progress-fill" id="sbProgress" style="width:0%"></div></div>
     </div>
     <div class="sb-sections" id="sbSections"></div>
     <div class="sb-bottom">
-      <div class="sb-sync"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">Підключення...</span></div>
-      <button class="export-btn" onclick="exportReport()">⬇ Експорт звіту</button>
+      <div class="sb-sync">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">Підключення...</span>
+      </div>
+      <button class="export-btn" onclick="exportReport()">⬇ Експорт звіту (.md)</button>
     </div>
   </nav>
 
-  <!-- MAIN -->
   <main class="main">
     <div class="page-header">
-      <div class="page-title">Server Pre-<span>Season</span> Test</div>
-      <div class="page-desc">Спільний чекліст для модераторів. Відмічай задачі, пиши баги — всі бачать зміни в реальному часі.</div>
+      <div class="page-title">Pre-<span>Season</span> Test</div>
+      <div class="page-desc">Спільний чекліст для модераторів. Відмічай задачі та пиши опис багів — всі бачать зміни одразу.</div>
       <div class="page-meta">
         <span class="meta-tag">NeoForge 1.21.1</span>
         <span class="meta-tag">Create</span>
@@ -201,28 +188,25 @@
       </div>
     </div>
 
-    <!-- NICK BANNER -->
     <div class="nick-banner">
-      <div class="nick-banner-label">Твій нік:</div>
-      <input type="text" id="globalNick" placeholder="введи нік..." maxlength="24" oninput="saveNick(this.value)" />
-      <span class="nick-banner-hint">Підпише твої коментарі до багів</span>
+      <span class="nick-banner-label">Твій нік:</span>
+      <input type="text" id="nickInput" placeholder="введи нік..." maxlength="24" oninput="onNickInput(this.value)" />
+      <span class="nick-banner-hint">підпише твої баги і коментарі</span>
     </div>
 
-    <!-- FILTER & ADD -->
     <div class="filter-bar">
-      <button class="filter-btn active" onclick="setFilter('all',this)">Всі</button>
-      <button class="filter-btn" onclick="setFilter('pending',this)">❓ Не перевірено</button>
-      <button class="filter-btn" onclick="setFilter('ok',this)">✔ OK</button>
-      <button class="filter-btn" onclick="setFilter('bug',this)">✖ Баги</button>
-      <div class="filter-sep"></div>
-      <button class="add-task-btn" onclick="toggleAddForm()">+ Додати задачу</button>
+      <button class="filter-btn active" id="filterAll" onclick="setFilter('all', this)">Всі</button>
+      <button class="filter-btn" onclick="setFilter('pending', this)">❓ Не перевірено</button>
+      <button class="filter-btn" onclick="setFilter('ok', this)">✔ OK</button>
+      <button class="filter-btn" onclick="setFilter('bug', this)">✖ Баги</button>
+      <div class="filter-gap"></div>
+      <button class="add-btn" onclick="toggleAddForm()">+ Додати задачу</button>
     </div>
 
-    <!-- ADD FORM -->
     <div class="add-form" id="addForm">
-      <h3>Нова задача</h3>
+      <div class="add-form-title">Нова задача для тесту</div>
       <div class="form-grid">
-        <div class="form-field full">
+        <div class="form-field form-col-full">
           <label>Назва задачі</label>
           <input type="text" id="fName" placeholder="Що треба перевірити?" maxlength="150" />
         </div>
@@ -245,23 +229,20 @@
       </div>
       <div class="form-actions">
         <button class="btn-cancel" onclick="toggleAddForm()">Скасувати</button>
-        <button class="btn-submit" onclick="submitTask()">Додати задачу</button>
+        <button class="btn-submit" onclick="submitTask()">Додати</button>
       </div>
     </div>
 
-    <!-- TASK LIST -->
-    <div id="taskList"><div class="loading">Завантаження даних...</div></div>
+    <div id="taskList"><div class="loading">⏳ Завантаження...</div></div>
   </main>
 </div>
 
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, update, remove, push } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
-
-  // ============================================================
-  // 🔥 FIREBASE CONFIG — ЗАМЕНИ НА СВОЮ (безкоштовно на firebase.google.com)
-  // ============================================================
+<script>
+// ================================================================
+// 🔥 ВСТАВТЕ СВІЙ FIREBASE CONFIG СЮДИ
+// Де взяти: firebase.google.com → твій проект →
+// Project Settings (шестерня) → Your apps → Config
+// ================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAxJ_KtfDoa7WqQsTPOyFWVYZhWv9cqHTw",
   authDomain: "afterlight-test.firebaseapp.com",
@@ -271,254 +252,243 @@ const firebaseConfig = {
   messagingSenderId: "813288180445",
   appId: "1:813288180445:web:aaee1bbb6e0c60833ae934"
 };
-  // ============================================================
+// ================================================================
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const tasksRef = ref(db, 'tasks');
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+var tasksRef = db.ref('tasks');
 
-  let allTasks = {};
-  let filter = 'all';
-  let filterSection = null;
+var allTasks = {};
+var currentFilter = 'all';
+var sectionFilter = null;
 
-  // --- Seed default tasks if empty ---
-  const DEFAULT_TASKS = [
-    { section:'⚙️ Основне', name:'Сервер запускається без помилок в консолі', note:'Перевір лог при старті — нема критичних Exception' },
-    { section:'⚙️ Основне', name:'Гравець може зайти на сервер', note:'Підключення через IP, нема кік без причини' },
-    { section:'⚙️ Основне', name:'TPS стабільний (≥18) під навантаженням', note:'Команда /tps або Spark — перевір при кількох онлайн' },
-    { section:'⚙️ Основне', name:'Права і ролі налаштовані правильно', note:'Звичайний гравець не має адмін-команд' },
-    { section:'⚙️ Основне', name:'Вайтліст / захист від гостей', note:'Спробуй зайти з акаунта поза вайтлістом' },
-    { section:'⚙️ Основне', name:'Інвентар і дані гравця зберігаються між рестартами', note:'Залогінься, зайди знову після рестарту' },
-    { section:'🏭 Create', name:'Шестерні і вали крафтяться правильно', note:'Перевір базові рецепти Create' },
-    { section:'🏭 Create', name:'Contraption не дропає TPS', note:'Запусти великий contraption і дивись /tps' },
-    { section:'🏭 Create', name:'Contraption зберігається між перезаходами', note:'Збери, відійди, повернись — ентіті на місці?' },
-    { section:'🏭 Create', name:'Create Trains — рейки і локомотиви', note:'Прокладь відрізок, їдь, перезайди — все збереглось?' },
-    { section:'🏭 Create', name:'Рецепти без конфліктів з іншими модами', note:'Тест крафтів що можуть перетинатися' },
-    { section:'🏭 Create', name:'Fluid Pipes і Tanks — без витоків', note:'Перекачай ліквід, перезайди — рівень правильний?' },
-    { section:'✈️ Aeronautics', name:'Повітряне судно збирається без крашу', note:'Зберіть базовий аероліт і спробуйте злетіти' },
-    { section:'✈️ Aeronautics', name:'Рух корабля плавний, без телепортів', note:'Тест при різних швидкостях і кутах' },
-    { section:'✈️ Aeronautics', name:'Гравці на борту не вилітають у чанки', note:'Під час польоту різко міняй напрям' },
-    { section:'✈️ Aeronautics', name:'Create contraption на борту стабільний', note:'Постав Create механізм на кораблі і запусти' },
-    { section:'✈️ Aeronautics', name:'Корабель зберігається після рестарту', note:'Збудуй корабель, рестарт, перевір збережено' },
-    { section:'🌍 Світ і генерація', name:'Генерація нових чанків без помилок', note:'Пройди далеко від спауну — нема дір у землі' },
-    { section:'🌍 Світ і генерація', name:'Структури модів генеруються', note:'Знайди хоча б 1-2 структури від модів' },
-    { section:'🌍 Світ і генерація', name:'Спаун гравця налаштований правильно', note:'Новий гравець спауниться в правильному місці' },
-    { section:'🌍 Світ і генерація', name:'Nether і End — перехід і генерація', note:'Зайди в Nether і End, перевір портали' },
-    { section:'⚔️ Геймплей', name:'Смерть — предмети дропаються коректно', note:'Перевір Keep Inventory або Gravestone мод' },
-    { section:'⚔️ Геймплей', name:'PvP і safe-зони працюють', note:'Вдар гравця у safe-зоні — нема дамагу?' },
-    { section:'⚔️ Геймплей', name:'Моби не дюпуються через механізми', note:'Тест contraption проти мобів' },
-    { section:'⚔️ Геймплей', name:'Торгівля і economy команди', note:'Перевір /trade /shop або плагін економіки' },
-    { section:'🔧 Адмін / Технічне', name:'Бекап налаштований і запускається', note:'Перевір cron і що файли реально зберігаються' },
-    { section:'🔧 Адмін / Технічне', name:'Карта (Dynmap/Bluemap) відображає світ', note:'Зайди на web-карту — чанки рендеряться?' },
-    { section:'🔧 Адмін / Технічне', name:'Discord синхронізація чату', note:'Напиши в грі — видно в Discord?' },
-    { section:'🔧 Адмін / Технічне', name:'/restart і /stop відпрацьовують чисто', note:'Стартуй рестарт, дивись лог — чисте завершення' },
-  ];
+var DEFAULT_TASKS = [
+  { section:'⚙️ Основне',         name:'Сервер запускається без помилок в консолі',       note:'Перевір лог при старті — нема критичних Exception' },
+  { section:'⚙️ Основне',         name:'Гравець може зайти на сервер',                     note:'Підключення через IP, нема кік без причини' },
+  { section:'⚙️ Основне',         name:'TPS стабільний (≥18) під навантаженням',           note:'Команда /tps або Spark — перевір при кількох гравцях' },
+  { section:'⚙️ Основне',         name:'Права і ролі налаштовані правильно',               note:'Звичайний гравець не має адмін-команд' },
+  { section:'⚙️ Основне',         name:'Вайтліст / захист від гостей',                     note:'Спробуй зайти з акаунта поза вайтлістом' },
+  { section:'⚙️ Основне',         name:'Інвентар зберігається між рестартами',             note:'Залогінься → рестарт → зайди знову' },
+  { section:'🏭 Create',           name:'Шестерні і вали крафтяться правильно',             note:'Перевір базові рецепти Create' },
+  { section:'🏭 Create',           name:'Contraption не дропає TPS',                        note:'Запусти великий contraption і дивись /tps' },
+  { section:'🏭 Create',           name:'Contraption зберігається між перезаходами',        note:'Збери, відійди, повернись — ентіті на місці?' },
+  { section:'🏭 Create',           name:'Create Trains — рейки і локомотиви',               note:'Прокладь відрізок, їдь, перезайди — все збереглось?' },
+  { section:'🏭 Create',           name:'Рецепти без конфліктів з іншими модами',           note:'Тест крафтів що можуть перетинатися' },
+  { section:'🏭 Create',           name:'Fluid Pipes і Tanks — без витоків',                note:'Перекачай ліквід, перезайди — рівень правильний?' },
+  { section:'✈️ Aeronautics',      name:'Повітряне судно збирається без крашу',             note:'Зберіть базовий аероліт і спробуйте злетіти' },
+  { section:'✈️ Aeronautics',      name:'Рух корабля плавний, без телепортів',              note:'Тест при різних швидкостях і кутах' },
+  { section:'✈️ Aeronautics',      name:'Гравці на борту не вилітають у чанки',             note:'Під час польоту різко міняй напрям' },
+  { section:'✈️ Aeronautics',      name:'Create contraption на борту стабільний',           note:'Постав Create механізм на кораблі і запусти' },
+  { section:'✈️ Aeronautics',      name:'Корабель зберігається після рестарту',             note:'Збудуй корабель → рестарт → перевір' },
+  { section:'🌍 Світ і генерація', name:'Генерація нових чанків без помилок',               note:'Пройди далеко від спауну — нема дір у землі' },
+  { section:'🌍 Світ і генерація', name:'Структури модів генеруються',                      note:'Знайди хоча б 1-2 структури від модів' },
+  { section:'🌍 Світ і генерація', name:'Спаун гравця налаштований правильно',              note:'Новий гравець спауниться в правильному місці' },
+  { section:'🌍 Світ і генерація', name:'Nether і End — перехід і генерація',               note:'Зайди в Nether і End, перевір портали' },
+  { section:'⚔️ Геймплей',         name:'Смерть — предмети дропаються коректно',            note:'Перевір Keep Inventory або Gravestone мод' },
+  { section:'⚔️ Геймплей',         name:'PvP і safe-зони працюють',                         note:'Вдар гравця у safe-зоні — нема дамагу?' },
+  { section:'⚔️ Геймплей',         name:'Моби не дюпуються через механізми',                note:'Тест contraption проти мобів' },
+  { section:'🔧 Адмін / Технічне', name:'Бекап налаштований і запускається',               note:'Перевір cron і що файли реально зберігаються' },
+  { section:'🔧 Адмін / Технічне', name:'Карта (Dynmap/Bluemap) відображає світ',          note:'Зайди на web-карту — чанки рендеряться?' },
+  { section:'🔧 Адмін / Технічне', name:'Discord синхронізація чату',                      note:'Напиши в грі — видно в Discord?' },
+  { section:'🔧 Адмін / Технічне', name:'/restart і /stop відпрацьовують чисто',           note:'Стартуй рестарт, дивись лог — чисте завершення' },
+];
 
-  onValue(tasksRef, snap => {
-    const val = snap.val();
-    if (!val) {
-      // Seed initial data
-      const batch = {};
-      DEFAULT_TASKS.forEach((t, i) => {
-        const key = 'task_' + String(i).padStart(3,'0');
-        batch[key] = { ...t, status: null, bugText: '', bugBy: '', createdAt: Date.now() };
-      });
-      set(tasksRef, batch);
-      return;
-    }
-    allTasks = val;
-    render();
-    setSynced(true);
+// Seed якщо БД порожня
+tasksRef.once('value', function(snap) {
+  if (!snap.val()) {
+    var batch = {};
+    DEFAULT_TASKS.forEach(function(t, i) {
+      var key = 'task_' + String(i).padStart(3, '0');
+      batch[key] = { section: t.section, name: t.name, note: t.note, status: null, bugText: '', bugBy: '', createdAt: Date.now() };
+    });
+    tasksRef.set(batch);
+  }
+});
+
+// Real-time listener
+tasksRef.on('value', function(snap) {
+  allTasks = snap.val() || {};
+  render();
+  document.getElementById('syncDot').className = 'sync-dot live';
+  document.getElementById('syncLabel').textContent = 'Синхронізовано';
+}, function(err) {
+  document.getElementById('syncDot').className = 'sync-dot';
+  document.getElementById('syncLabel').textContent = 'Помилка з\'єднання';
+  console.error('Firebase error:', err);
+});
+
+// Nick
+function onNickInput(val) { localStorage.setItem('mc_nick', val); }
+function getNick() { return document.getElementById('nickInput').value.trim() || 'Анонім'; }
+var savedNick = localStorage.getItem('mc_nick');
+if (savedNick) { setTimeout(function(){ var el = document.getElementById('nickInput'); if(el) el.value = savedNick; }, 30); }
+
+// Filter
+function setFilter(f, btn) {
+  currentFilter = f; sectionFilter = null;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  render();
+}
+function setSectionFilter(sec) {
+  sectionFilter = sec; currentFilter = 'all';
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('filterAll').classList.add('active');
+  render();
+  document.getElementById('taskList').scrollIntoView({behavior:'smooth'});
+}
+
+// Add form
+function toggleAddForm() { document.getElementById('addForm').classList.toggle('open'); }
+function submitTask() {
+  var name = document.getElementById('fName').value.trim();
+  if (!name) { document.getElementById('fName').focus(); return; }
+  tasksRef.push({
+    section: document.getElementById('fSection').value,
+    name: name,
+    note: document.getElementById('fNote').value.trim(),
+    status: null, bugText: '', bugBy: '', createdAt: Date.now()
+  });
+  document.getElementById('fName').value = '';
+  document.getElementById('fNote').value = '';
+  document.getElementById('addForm').classList.remove('open');
+}
+
+// Actions
+function markOk(id) {
+  var t = allTasks[id];
+  tasksRef.child(id).update({ status: t.status === 'ok' ? null : 'ok', bugText: '', bugBy: '' });
+}
+function markBug(id) {
+  var t = allTasks[id];
+  if (t.status === 'bug') {
+    tasksRef.child(id).update({ status: null, bugText: '', bugBy: '' });
+  } else {
+    tasksRef.child(id).update({ status: 'bug' });
+    setTimeout(function(){ var el = document.getElementById('bugta_' + id); if(el) el.focus(); }, 150);
+  }
+}
+function saveBug(id) {
+  var el = document.getElementById('bugta_' + id);
+  if (!el) return;
+  tasksRef.child(id).update({ bugText: el.value, bugBy: getNick() });
+}
+function resetTask(id) { tasksRef.child(id).update({ status: null, bugText: '', bugBy: '' }); }
+function deleteTask(id) { if (confirm('Видалити цю задачу?')) tasksRef.child(id).remove(); }
+
+// Utils
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Render
+function render() {
+  var entries = Object.entries(allTasks);
+  var total   = entries.length;
+  var okCount  = entries.filter(function(e){ return e[1].status === 'ok'; }).length;
+  var bugCount = entries.filter(function(e){ return e[1].status === 'bug'; }).length;
+  var pend     = total - okCount - bugCount;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statOk').textContent    = okCount;
+  document.getElementById('statBug').textContent   = bugCount;
+  document.getElementById('statPend').textContent  = pend;
+  document.getElementById('sbProgress').style.width = (total ? Math.round((okCount+bugCount)/total*100) : 0) + '%';
+
+  // Sidebar
+  var sections = [];
+  entries.forEach(function(e){ if(sections.indexOf(e[1].section)===-1) sections.push(e[1].section); });
+  var sbHtml = '';
+  sections.forEach(function(sec) {
+    var se = entries.filter(function(e){ return e[1].section===sec; });
+    var hasBug = se.some(function(e){ return e[1].status==='bug'; });
+    var allOk  = se.length>0 && se.every(function(e){ return e[1].status==='ok'; });
+    sbHtml += '<div class="sb-sec-item'+(sectionFilter===sec?' active':'')+'" onclick="setSectionFilter(\''+sec.replace(/\\/g,'\\\\').replace(/'/g,'\\\'')+'\')">'
+            + '<div class="sb-sec-dot '+(hasBug?'has-bug':allOk?'all-ok':'')+'"></div>'
+            + esc(sec) + '</div>';
+  });
+  document.getElementById('sbSections').innerHTML = sbHtml;
+
+  // Filter tasks
+  var filtered = entries.slice();
+  if (sectionFilter) filtered = filtered.filter(function(e){ return e[1].section===sectionFilter; });
+  if (currentFilter==='ok')      filtered = filtered.filter(function(e){ return e[1].status==='ok'; });
+  else if (currentFilter==='bug')     filtered = filtered.filter(function(e){ return e[1].status==='bug'; });
+  else if (currentFilter==='pending') filtered = filtered.filter(function(e){ return !e[1].status; });
+
+  if (!filtered.length) {
+    document.getElementById('taskList').innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Нічого не знайдено</div>';
+    return;
+  }
+
+  // Group
+  var bySection = {}, sectionOrder = [];
+  filtered.forEach(function(e){
+    var sec = e[1].section;
+    if(!bySection[sec]){ bySection[sec]=[]; sectionOrder.push(sec); }
+    bySection[sec].push(e);
   });
 
-  function setSynced(ok) {
-    document.getElementById('syncDot').className = 'sync-dot' + (ok ? ' live' : '');
-    document.getElementById('syncLabel').textContent = ok ? 'Синхронізовано' : 'Офлайн';
-  }
+  var html = '';
+  sectionOrder.forEach(function(sec) {
+    var st = bySection[sec];
+    var secOk  = st.filter(function(e){ return e[1].status==='ok'; }).length;
+    var secBug = st.filter(function(e){ return e[1].status==='bug'; }).length;
+    html += '<div class="section-block"><div class="section-header"><span class="section-name">'+esc(sec)+'</span>';
+    if(secOk)  html += '<span class="sec-badge ok">✔ '+secOk+' OK</span>';
+    if(secBug) html += '<span class="sec-badge bug">✖ '+secBug+' баг</span>';
+    html += '<span class="sec-progress">'+(secOk+secBug)+'/'+st.length+'</span></div>';
 
-  window.setFilter = function(f, btn) {
-    filter = f; filterSection = null;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    render();
-  };
-
-  window.setSectionFilter = function(sec) {
-    filterSection = sec; filter = 'all';
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('filterAll').classList.add('active');
-    render();
-    document.getElementById('taskList').scrollIntoView({behavior:'smooth'});
-  };
-
-  window.toggleAddForm = function() {
-    document.getElementById('addForm').classList.toggle('open');
-  };
-
-  window.submitTask = function() {
-    const name = document.getElementById('fName').value.trim();
-    if (!name) { document.getElementById('fName').focus(); return; }
-    const section = document.getElementById('fSection').value;
-    const note = document.getElementById('fNote').value.trim();
-    const newRef = push(tasksRef);
-    set(newRef, { section, name, note, status: null, bugText: '', bugBy: '', createdAt: Date.now() });
-    document.getElementById('fName').value = '';
-    document.getElementById('fNote').value = '';
-    document.getElementById('addForm').classList.remove('open');
-  };
-
-  window.markOk = function(id) {
-    const t = allTasks[id];
-    const newStatus = t.status === 'ok' ? null : 'ok';
-    update(ref(db, 'tasks/' + id), { status: newStatus, bugText: '', bugBy: '' });
-  };
-
-  window.markBug = function(id) {
-    const t = allTasks[id];
-    const newStatus = t.status === 'bug' ? null : 'bug';
-    if (newStatus === null) {
-      update(ref(db, 'tasks/' + id), { status: null, bugText: '', bugBy: '' });
-    } else {
-      update(ref(db, 'tasks/' + id), { status: 'bug' });
-      setTimeout(() => { const el = document.getElementById('bugta_'+id); if(el) el.focus(); }, 100);
-    }
-  };
-
-  window.saveBug = function(id) {
-    const el = document.getElementById('bugta_'+id);
-    if (!el) return;
-    const nick = getNick();
-    update(ref(db, 'tasks/' + id), { bugText: el.value, bugBy: nick });
-  };
-
-  window.resetTask = function(id) {
-    update(ref(db, 'tasks/' + id), { status: null, bugText: '', bugBy: '' });
-  };
-
-  window.deleteTask = function(id) {
-    if (confirm('Видалити задачу?')) remove(ref(db, 'tasks/' + id));
-  };
-
-  window.saveNick = function(val) {
-    localStorage.setItem('mc_nick', val);
-  };
-
-  function getNick() {
-    return document.getElementById('globalNick').value.trim() || 'Анонім';
-  }
-
-  // Load saved nick
-  const saved = localStorage.getItem('mc_nick');
-  if (saved) { setTimeout(() => { const el = document.getElementById('globalNick'); if(el) el.value = saved; }, 100); }
-
-  window.exportReport = function() {
-    const tasks = Object.values(allTasks);
-    let out = '# Server Pre-Season Report\n\n';
-    const sections = [...new Set(tasks.map(t => t.section))];
-    sections.forEach(sec => {
-      out += `\n## ${sec}\n`;
-      tasks.filter(t => t.section === sec).forEach(t => {
-        const s = t.status === 'ok' ? '✔' : t.status === 'bug' ? '✖' : '❓';
-        out += `\n${s} **${t.name}**`;
-        if (t.note) out += `\n   > ${t.note}`;
-        if (t.status === 'bug' && t.bugText) out += `\n   🐛 БАГ (${t.bugBy || 'Анонім'}): ${t.bugText}`;
-        out += '\n';
-      });
+    st.forEach(function(entry) {
+      var id = entry[0], t = entry[1];
+      var cls = t.status==='ok' ? ' status-ok' : t.status==='bug' ? ' status-bug' : '';
+      var bugBlock = '';
+      if (t.status === 'bug') {
+        bugBlock = '<div class="bug-wrap">'
+          + '<textarea class="bug-textarea" id="bugta_'+id+'" placeholder="Опиши баг: що сталося, як відтворити...">'+esc(t.bugText||'')+'</textarea>'
+          + '<br><button class="bug-save-btn" onclick="saveBug(\''+id+'\')">💾 Зберегти опис</button>'
+          + '</div>';
+        if (t.bugText && t.bugBy) bugBlock += '<div class="task-who">Знайшов: <b>'+esc(t.bugBy)+'</b></div>';
+      }
+      html += '<div class="task-card'+cls+'">'
+        + '<div class="task-body">'
+        + '<div class="task-name">'+esc(t.name)+'</div>'
+        + (t.note?'<div class="task-note">'+esc(t.note)+'</div>':'')
+        + bugBlock
+        + '</div>'
+        + '<div class="task-actions">'
+        + '<button class="btn-ok'+(t.status==='ok'?' active':'')+'" onclick="markOk(\''+id+'\')">✔ OK</button>'
+        + '<button class="btn-bug'+(t.status==='bug'?' active':'')+'" onclick="markBug(\''+id+'\')">✖ Баг</button>'
+        + (t.status?'<button class="btn-icon" onclick="resetTask(\''+id+'\')" title="Скинути">↺</button>':'')
+        + '<button class="btn-del" onclick="deleteTask(\''+id+'\')" title="Видалити">✕</button>'
+        + '</div></div>';
     });
-    const blob = new Blob([out], {type: 'text/markdown'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'mc-preseason-report.md'; a.click();
-  };
+    html += '</div>';
+  });
+  document.getElementById('taskList').innerHTML = html;
+}
 
-  function render() {
-    const tasks = Object.entries(allTasks);
-    const total = tasks.length;
-    const okCount = tasks.filter(([,t]) => t.status === 'ok').length;
-    const bugCount = tasks.filter(([,t]) => t.status === 'bug').length;
-    const pend = total - okCount - bugCount;
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statOk').textContent = okCount;
-    document.getElementById('statBug').textContent = bugCount;
-    document.getElementById('statPend').textContent = pend;
-    const pct = total ? Math.round((okCount + bugCount) / total * 100) : 0;
-    document.getElementById('sbProgress').style.width = pct + '%';
-
-    // Sidebar sections
-    const sections = [...new Set(tasks.map(([,t]) => t.section))];
-    let sbHtml = '';
-    sections.forEach(sec => {
-      const secTasks = tasks.filter(([,t]) => t.section === sec);
-      const hasBug = secTasks.some(([,t]) => t.status === 'bug');
-      const allOk = secTasks.length > 0 && secTasks.every(([,t]) => t.status === 'ok');
-      const dotCls = hasBug ? 'has-bug' : allOk ? 'all-ok' : '';
-      sbHtml += `<div class="sb-sec-item${filterSection===sec?' active':''}" onclick="setSectionFilter('${sec.replace(/'/g,"\\'")}')"><div class="sb-sec-dot ${dotCls}"></div>${sec}</div>`;
+// Export
+function exportReport() {
+  var out = '# MC Server Pre-Season Report\n\n';
+  var entries = Object.values(allTasks);
+  var sections = [];
+  entries.forEach(function(t){ if(sections.indexOf(t.section)===-1) sections.push(t.section); });
+  sections.forEach(function(sec) {
+    out += '\n## ' + sec + '\n';
+    entries.filter(function(t){ return t.section===sec; }).forEach(function(t) {
+      var s = t.status==='ok'?'✔':t.status==='bug'?'✖':'❓';
+      out += '\n'+s+' **'+t.name+'**\n';
+      if(t.note) out += '   > '+t.note+'\n';
+      if(t.status==='bug'&&t.bugText) out += '   🐛 '+(t.bugBy||'Анонім')+': '+t.bugText+'\n';
     });
-    document.getElementById('sbSections').innerHTML = sbHtml;
-
-    // Filter tasks
-    let filtered = tasks;
-    if (filterSection) filtered = filtered.filter(([,t]) => t.section === filterSection);
-    if (filter === 'ok') filtered = filtered.filter(([,t]) => t.status === 'ok');
-    else if (filter === 'bug') filtered = filtered.filter(([,t]) => t.status === 'bug');
-    else if (filter === 'pending') filtered = filtered.filter(([,t]) => !t.status);
-
-    if (filtered.length === 0) {
-      document.getElementById('taskList').innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Нічого не знайдено</div>';
-      return;
-    }
-
-    // Group by section
-    const bySection = {};
-    filtered.forEach(([id, t]) => {
-      if (!bySection[t.section]) bySection[t.section] = [];
-      bySection[t.section].push([id, t]);
-    });
-
-    let html = '';
-    Object.entries(bySection).forEach(([sec, stasks]) => {
-      const secOk = stasks.filter(([,t]) => t.status === 'ok').length;
-      const secBug = stasks.filter(([,t]) => t.status === 'bug').length;
-      html += `<div class="section-block"><div class="section-header"><span class="section-name">${sec}</span>`;
-      if (secOk) html += `<span class="sec-badge ok">✔ ${secOk} OK</span>`;
-      if (secBug) html += `<span class="sec-badge bug">✖ ${secBug} баг</span>`;
-      html += `<span class="sec-progress">${secOk+secBug}/${stasks.length}</span></div>`;
-
-      stasks.forEach(([id, t]) => {
-        const cls = t.status === 'ok' ? ' status-ok' : t.status === 'bug' ? ' status-bug' : '';
-        html += `<div class="task-card${cls}" id="card_${id}">
-          <div class="task-body">
-            <div class="task-name">${escHtml(t.name)}</div>
-            ${t.note ? `<div class="task-note">${escHtml(t.note)}</div>` : ''}
-            ${t.status === 'bug' ? `
-              <div class="bug-input-wrap">
-                <textarea class="bug-textarea" id="bugta_${id}" placeholder="Опиши баг: що сталося, кроки відтворення...">${escHtml(t.bugText||'')}</textarea>
-                <button class="bug-save-btn" onclick="saveBug('${id}')">Зберегти опис</button>
-              </div>
-            ` : ''}
-            ${t.status === 'ok' && t.bugBy ? `<div class="task-who">Позначено: <span>${escHtml(t.bugBy)}</span></div>` : ''}
-            ${t.status === 'bug' && t.bugBy && t.bugText ? `<div class="task-who">Знайшов: <span>${escHtml(t.bugBy)}</span></div>` : ''}
-          </div>
-          <div class="task-actions">
-            <button class="btn-ok${t.status==='ok'?' active':''}" onclick="markOk('${id}')">✔ OK</button>
-            <button class="btn-bug${t.status==='bug'?' active':''}" onclick="markBug('${id}')">✖ Баг</button>
-            ${t.status ? `<button class="btn-reset" onclick="resetTask('${id}')" title="Скинути">↺</button>` : ''}
-            <button class="btn-del" onclick="deleteTask('${id}')" title="Видалити">✕</button>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
-    });
-
-    document.getElementById('taskList').innerHTML = html;
-  }
-
-  function escHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  // Initial render placeholder
-  render();
+  });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out], {type:'text/markdown;charset=utf-8'}));
+  a.download = 'mc-report.md';
+  a.click();
+}
 </script>
 </body>
 </html>
